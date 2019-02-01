@@ -1,0 +1,37 @@
+.search-filters {
+    margin: 10px 0;
+
+    &.collapsed .card-body {
+        display: none;
+    }
+
+    .filter-btn-collapse, &.collapsed .filter-btn-expand {
+        display: inline-block;
+    }
+
+    &:not(.collapsed) > .card-header .filter-btn-expand, &.collapsed > .card-header .filter-btn-collapse {
+        display: none;
+    }
+
+    .active-filter-group {
+        margin-right: 4px;
+
+        .badge {
+            margin-right: 4px;
+
+            .remove-tag {
+                display: inline-block;
+                cursor: pointer;
+                width: 14px;
+                text-align: center;
+                transition: all .2s ease;
+                border-radius: 4px 50% 50% 4px;
+                padding: 0;
+
+                &:hover, &:focus, &:active {
+                    background: #dc3545;
+                }
+            }
+        }
+    }
+}

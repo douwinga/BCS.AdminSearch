@@ -1,0 +1,30 @@
+@using BCS.AdminSearch.ViewModels
+@model AdminSearchSettingsViewModel
+
+
+@if (Model.SearchIndexes.Any())
+{
+    <fieldset class="form-group" asp-validation-class-for="AdminSearchIndex">
+        <label asp-for="AdminSearchIndex">@T["Admin search index"]</label>
+        <select asp-for="AdminSearchIndex" class="form-control">
+            @foreach (var index in Model.SearchIndexes)
+            {
+                <option value="@index" selected="@(Model.AdminSearchIndex == index)">@index</option>
+            }
+        </select>
+        <span asp-validation-for="AdminSearchIndex"></span>
+        <span class="hint">@T["The index to use for the admin search."]</span>
+    </fieldset>
+}
+else
+{
+    <div class="alert alert-warning">@T["You need to create at least an index to set as the admin search index."]</div>
+}
+
+<fieldset class="form-group" asp-validation-class-for="AdminSearchFields">
+    <label asp-for="AdminSearchFields">@T["Admin search fields"]</label>
+    <input asp-for="AdminSearchFields" class="form-control" />
+    <span asp-validation-for="AdminSearchFields"></span>
+    <span class="hint">@T["A comma separated list of fields to use for the admin search. (e.g., Content.ContentItem.DisplayText.Analyzed, Content.BodyAspect.Body)"]</span>
+</fieldset>
+

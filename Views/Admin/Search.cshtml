@@ -1,0 +1,103 @@
+@using System
+@using System.Linq
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Serialization
+@model BCS.AdminSearch.ViewModels.AdminSearchViewModel
+@inject OrchardCore.ContentManagement.Display.IContentItemDisplayManager ContentItemDisplayManager
+
+@{
+    var searchFilters = Html.Raw(JsonConvert.SerializeObject(Model.SearchFilters, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() }));
+    var activeFilters = Model.Filters != null ? Html.Raw(JsonConvert.SerializeObject(Model.Filters, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() })) : Html.Raw("[]");
+}
+
+<script asp-src="https://vuejs.org/js/vue.min.js" debug-src="https://vuejs.org/js/vue.js" asp-name="vuejs" at="Foot"></script>
+<script asp-src="https://unpkg.com/vue-multiselect@2.1.3/dist/vue-multiselect.min.js" asp-name="vuemultiselect" depends-on="vuejs" at="Foot"></script>
+<style asp-src="https://unpkg.com/vue-multiselect@2.1.3/dist/vue-multiselect.min.css"></style>
+
+<script>
+    var searchFilters = '@searchFilters';
+    var activeFilters = '@activeFilters';
+    var searchTerm = '@Model.SearchTerm';
+</script>
+<script asp-src="/BCS.AdminSearch/Scripts/search.js" at="Foot"></script>
+<style asp-src="/BCS.AdminSearch/Styles/search.css"></style>
+
+<div id="vueSearch">
+    <form id="searchForm" action="" @@submit.prevent="applyFilters">
+        <div class="input-group">
+            <input class="form-control" v-model="searchTerm" id="searchTerm" type="text" name="searchTerm" placeholder="Search for something..." />
+            <div class="input-group-append">
+                <button class="btn btn-success" @@click="applyFilters"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card search-filters" v-bind:class="{ collapsed: filtersCollapsed }">
+        <div class="card-header">
+            <button type="button" class="btn btn-outline-secondary btn-sm filter-btn-collapse" v-on:click="filtersCollapsed = true"><i class="fa fa-minus" aria-hidden="true"></i></button>
+            <button type="button" class="btn btn-outline-secondary btn-sm filter-btn-expand" v-on:click="filtersCollapsed = false"><i class="fa fa-plus" aria-hidden="true"></i></button>
+            <span>@T["Filters"]</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="filter-types col-md-4 col-xl-4">
+                    <vue-multiselect v-model="selectedFilter" :options="searchFilters" :multiple="false" label="name" track-by="name" name="filterTypes" @@change="onFilterChange"
+                                     placeholder="Select Filter Type..." :preselect-first="false" :close-on-select="true" :show-labels="false" :allow-empty="false">
+                    </vue-multiselect>
+                </div>
+                <div class="filter-values col-md-6 col-xl-6">
+                    <vue-multiselect v-for="filter of searchFilters" v-if="selectedFilter.name === filter.name" v-model="values[filter.name]" :options="filter.options" :multiple="true" :close-on-select="false" :clear-on-select="false" @@select="onSelect" @@remove="onRemove"
+                                     :preserve-search="true" :placeholder="'Select ' + filter.name + ' Values...'" label="name" track-by="name" :preselect-first="false" :taggable="true">
+                        <template slot="selection" slot-scope="{ values, search, isOpen }">
+                            <span class="multiselect__single" v-if="values.length && !isOpen">{{ values.length }} {{filter.name}}(s) selected</span>
+                        </template>
+                    </vue-multiselect>
+                </div>
+                <div class="col-md-2 col-xl-2">
+                    <button id="applyFilters" class="btn btn-success" @@click="applyFilters">Apply Filters</button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div v-if="Object.keys(activeFilters).length" v-cloak class="col-12 active-filters">
+                    <strong>Filtering By:</strong>
+                    <span v-for="(group, key) in activeFilters" class="active-filter-group">
+                        <span>{{key}}(s) </span>
+                        <span v-for="filter of group" class="badge badge-info">
+                            <span>{{filter.name}}</span>
+                            <span class="remove-tag" @@click="onRemoveTag(filter.name, filter.parent)">
+                                <i class="fa fa-times"></i>
+                            </span>
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ul class="list-group">
+    @foreach (var contentItem in Model.ContentItems)
+    {
+        var contentItemSummary = await ContentItemDisplayManager.BuildDisplayAsync(contentItem, null, "SummaryAdmin");
+        <li class="list-group-item">
+            @await DisplayAsync(contentItemSummary)
+        </li>
+    }
+</ul>
+
+@if (Model.Filters.Any() || !string.IsNullOrWhiteSpace(Model.SearchTerm))
+{
+    if (!Model.ContentItems.Any())
+    {
+        <div class="alert alert-info">
+            @T["No result found."]
+        </div>
+    }
+    else
+    {
+        <p>@T["Showing records {0} - {1} of {2}", (Model.PageNumber * Model.PageSize) + 1, Math.Min(Model.TotalRecordCount, (Model.PageNumber + 1) * Model.PageSize), Model.TotalRecordCount]</p>
+    }
+
+}
+
+@await DisplayAsync(Model.Pager)
